@@ -15,13 +15,14 @@ object Lab3 {
 
   object DomainTags extends Enumeration {
     type Tag = Value
-    val WHITESPACE, END_OF_PROGRAM, STRING, NUMBER, IDENTIFIER = Value
+    val ERROR, WHITESPACE, END_OF_PROGRAM, STRING, NUMBER, IDENTIFIER = Value
   }
 
   import ru.bmstu.ScalaLabs.Lab3.DomainTags._
 
   class Scanner {
-    def scan(start: Pos): (Tag, Pos) = sys.error("syntax error at " + start)
+    //def scan(start: Pos): (Tag, Pos) = sys.error("syntax error at " + start)
+    def scan(start: Pos): (Tag, Pos) = (ERROR, start.inc)
   }
 
   class Token(val start: Pos, scanner: Scanner) {
@@ -69,7 +70,8 @@ object Lab3 {
   trait Idents extends Scanner {
     private def missIdent(pos: Pos): Pos = pos.ch match {
       case '.' if pos.inc.ch.toChar.isLetter => missIdent(pos.inc)
-      case x => if (x.toChar.isLetterOrDigit) missIdent(pos.inc) else pos
+      case x   if x.toChar.isLetterOrDigit   => missIdent(pos.inc)
+      case _                                 => pos
     }
 
     override def scan(start: Pos): (Tag, Pos) = {
@@ -81,16 +83,15 @@ object Lab3 {
   }
 
   trait Numbers extends Scanner {
-    private val pointCounter = 0
 
-    private def missNumber(pos: Pos): (Pos, Boolean) = pos.ch match {
-      case '.' if pos.inc.ch.toChar.isDigit => if (pointCounter + 1 > 1) (pos, true) else missNumber(pos.inc)
-      case x => if (x.toChar.isDigit) missNumber(pos.inc) else (pos, false)
+    private def missNumber(pos: Pos, wasPoint: Boolean): (Pos, Boolean) = pos.ch match {
+      case '.' if pos.inc.ch.toChar.isDigit => if (wasPoint) (pos, true) else missNumber(pos.inc, wasPoint = true)
+      case x => if (x.toChar.isDigit) missNumber(pos.inc, wasPoint) else (pos, false)
     }
 
     override def scan(start: Pos): (Tag, Pos) = {
       if (start.ch.toChar.isDigit || start.ch == '-') {
-        val (follow, error) = missNumber(start.inc)
+        val (follow, error) = missNumber(start.inc, wasPoint = false)
         if (!error)
           (NUMBER, follow)
         else super.scan(start)
