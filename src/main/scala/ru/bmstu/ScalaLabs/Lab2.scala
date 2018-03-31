@@ -63,9 +63,9 @@ class Word(x: List[Element]) {
   def - (other: Element) = this + (-other)
 }
 
-object Lab2 {
+object Lab2 extends App{
 
-  def main(args: Array[String]): Unit = {
+  override def main(args: Array[String]): Unit = {
     val a = new Element(ElmntType.A)
     val notA = new Element(ElmntType.invA)
     val b = new Element(ElmntType.B)
